@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Solver</title>
+    <style>
+        body {
+            background-image: url(download\ \(1\).jpg);
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        table {
+            border-collapse: collapse;
+            margin: 20px auto;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            overflow: hidden;
+            animation: fadeIn 1s;
+        }
+        td {
+            border: 1px solid black;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        td:nth-child(3n) {
+            border-right: 2px solid black;
+        }
+        tr:nth-child(3n) td {
+            border-bottom: 2px solid black;
+        }
+        td:nth-child(1) {
+            border-left: 2px solid black;
+        }
+        tr:nth-child(1) td {
+            border-top: 2px solid black;
+        }
+        input {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            font-size: 20px;
+            border: none;
+            outline: none;
+            background: none;
+        }
+        input:focus {
+            background-color: #f0f8ff;
+        }
+        .button-container {
+            text-align: center;
+            margin: 10px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center left;
+            padding-left: 40px;
+        }
+        button:hover {
+            background-color: #dcdcdc;
+            transform: scale(1.05);
+        }
+        button:disabled {
+            cursor: not-allowed;
+        }
+        .solve-button {
+            background-image: url('https://img.icons8.com/color/48/000000/checked.png');
+        }
+        .reset-button {
+            background-image: url('https://img.icons8.com/color/48/000000/refresh.png');
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fillAnimation {
+            0% {
+                background-color: transparent;
+                color: black;
+            }
+            100% {
+                background-color: #b0e0e6;
+                color: #000;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Sudoku Solver</h1>
+<table id="sudoku-grid">
+    <!-- Generate a 9x9 grid for the Sudoku puzzle -->
+    <script>
+        for (let i = 0; i < 9; i++) {
+            document.write("<tr>");
+            for (let j = 0; j < 9; j++) {
+                document.write(`<td><input type="text" maxlength="1" id="cell-${i}-${j}" oninput="validateInput(this)" /></td>`);
+            }
+            document.write("</tr>");
+        }
+    </script>
+</table>
+<div class="button-container">
+    <button id="solve-button" class="solve-button" onclick="solveSudoku()">Solve</button>
+    <button id="reset-button" class="reset-button" onclick="resetGrid()">Reset</button>
+</div>
+
+<script>
+    const N = 9;
+
+    function validateInput(cell) {
+        cell.value = cell.value.replace(/[^1-9]/g, ''); // Allow only numbers 1-9
+    }
+
+    function isSafe(grid, row, col, num) {
+        for (let x = 0; x < N; x++) {
+            if (grid[row][x] == num || grid[x][col] == num) {
+                return false;
+            }
+        }
+        const startRow = row - row % 3, startCol = col - col % 3;
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                if (grid[i + startRow][j + startCol] == num) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    function solveSudokuUtil(grid) {
+        let row = -1, col = -1, isEmpty = true;
+        for (let i = 0; i < N; i++) {
+            for (let j = 0; j < N; j++) {
+                if (grid[i][j] == 0) {
+                    row = i;
+                    col = j;
+                    isEmpty = false;
+                    break;
+                }
+            }
+            if (!isEmpty) break;
+        }
+        if (isEmpty) return true;
+        for (let num = 1; num <= 9; num++) {
+            if (isSafe(grid, row, col, num)) {
+                grid[row][col] = num;
+                let cellId = `cell-${row}-${col}`;
+                let cell = document.getElementById(cellId);
+                setTimeout(() => {
+                    cell.style.animation = 'fillAnimation 0.5s forwards';
+                    cell.value = num;
+                }, 500);
+                if (solveSudokuUtil(grid)) {
+                    return true;
+                }
+                grid[row][col] = 0;
+                cell.value = '';
+                cell.style.animation = '';
+            }
+        }
+        return false;
+    }
+
+    function solveSudoku() {
+        let grid = [];
+        for (let i = 0; i < N; i++) {
+            grid[i] = [];
+            for (let j = 0; j < N; j++) {
+                let cellValue = document.getElementById(`cell-${i}-${j}`).value;
+                grid[i][j] = cellValue ? parseInt(cellValue) : 0;
+            }
+        }
+
+        if (grid.flat().every(val => val === 0)) {
+            alert("Please enter some numbers in the grid.");
+            return;
+        }
+
+        solveSudokuUtil(grid);
+    }
+
+    function resetGrid() {
+        for (let i = 0; i < N; i++) {
+            for (let j = 0; j < N; j++) {
+                let cell = document.getElementById(`cell-${i}-${j}`);
+                cell.value = '';
+                cell.style.animation = '';
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
